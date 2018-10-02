@@ -1,29 +1,73 @@
 #include "opencv2/highgui/highgui.hpp"
 #include <iostream>
-
+#include <vector>
 using namespace cv;
 using namespace std;
 
-void onMouse(int event, int x, int y, int flags, void* img) 
+vector<Point> capturePoint;
+
+void onMouse(int event, int x, int y, int flags, void* param)
 {
-	switch(event) {
-		case CV_EVENT_LBUTTONDOWN:
-			cout << "Coordinate: (" << x << ")" << endl;
-			IplImage *timg = cvCloneImage((IplImage*) img);
-			cvCircle(timg, cvPoint(x,y), 3, Scalar(0,0,255), CV_FILLED);
-			cvShowImage("image", timg);
-			cvReleaseImage(&timg);
-			break;
+	int n = 0;
+	switch (event)
+	{
+	case CV_EVENT_LBUTTONDOWN: //click left button of mouse
+		cout<<"Coordinate: ("<<x<<','<<y<<')'<<endl;
+		n++;
+		if(n<2)
+			capturePoint.push_back(Point(x,y));
+		break;
 	}
-	
-}
-int main()
-{
-	IplImage *img = cvLoadImage("/home/pjds/Downloads/passport.jpg");
-	cvNamedWindow("Passport!", WINDOW_AUTOSIZE);
-	setMouseCallback("Passport!", onMouse, img);
-	cvShowImage("Passport!", img);
-	waitKey(0);
-	return 0;
 }
 
+class SquareImage {
+	public:
+		SquareImage(String imageDirectory, String displayString) {
+			
+			
+			img = cvLoadImage(imageDirectory.c_str());
+			this->text = displayString;
+			
+			
+			
+
+		}
+		void setupWindow() {
+			namedWindow("image", CV_WINDOW_AUTOSIZE);
+			cvShowImage("image", img);
+			setMouseCallback("image", onMouse, NULL);
+			waitKey(0);
+			
+
+		}
+		void showImage(Point pointOne, Point pointTwo) {
+			
+			cvRectangle(img, pointOne, pointTwo,Scalar(0,0,255)); //draw rectangle
+
+			cvPutText(img, text.c_str(), Point(pointOne.x+2,pointTwo.y-10), &font, cvScalar(255, 0, 0)); // overlay text
+			cvShowImage("image", img);
+			waitKey(0);
+		}
+		
+	
+	private:
+
+		string text;	
+		IplImage *img;
+		CvFont font = cvFont(3);
+
+
+};
+
+int main()
+{
+
+	string text;
+	cout << "Enter a string for the rectangle" << endl;
+	cin >> text;
+
+	SquareImage sqrImageCls("/home/pjds/Downloads/leonardo.jpg", text);
+	sqrImageCls.setupWindow();
+	sqrImageCls.showImage(capturePoint[0], capturePoint[1]);
+	return 0;
+}
