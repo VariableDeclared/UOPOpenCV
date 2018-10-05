@@ -6,7 +6,7 @@ using namespace std;
 
 int main()
 {
-	VideoCapture capture("/home/pjds/Downloads/sample.wmv");
+	VideoCapture capture(0);
 
 	if (!capture.isOpened()) {
 		cout << "Cannot open the video file" << endl;
