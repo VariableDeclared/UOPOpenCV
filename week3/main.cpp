@@ -13,28 +13,38 @@ int main()
 {
 	displayOpenCVVersion();
 	Mat img = imread("/home/pjds/projects/ComputerVision/SamplePictures/building.jpg");
-	namedWindow("Original Image", CV_WINDOW_AUTOSIZE);
-	namedWindow("Sobel_X", CV_WINDOW_AUTOSIZE);
-	namedWindow("Sobel_Y", CV_WINDOW_AUTOSIZE);
-	namedWindow("Sobel", CV_WINDOW_AUTOSIZE);
-	namedWindow("Laplacian", CV_WINDOW_AUTOSIZE);
-	imshow("Original Image",img);
-	Mat smooth_img, gray_img;
-	GaussianBlur(img, smooth_img, Size(3, 3), 0, 0); //Gaussian smooth
-	cvtColor(smooth_img, gray_img, CV_BGR2GRAY); //convert to gray-level image
-	Mat grad_x, grad_y, abs_grad_x, abs_grad_y, SobelGrad;
-	Sobel(gray_img,grad_x,CV_32FC1,1,0);
-	convertScaleAbs(grad_x, abs_grad_x); //gradient X
-	imshow("Sobel_X",abs_grad_x);
-	Sobel(gray_img,grad_y,CV_32FC1,0,1);
-	convertScaleAbs(grad_y, abs_grad_y); //gradient Y
-	imshow("Sobel_Y",abs_grad_y);
-	addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0, SobelGrad); //total Sobel gradient
-	imshow("Sobel",SobelGrad);
-	Mat Lap, abs_Lap;
-	Laplacian(gray_img,Lap,CV_32FC1,3);
-	convertScaleAbs(Lap, abs_Lap); //Laplacian operator
-	imshow("Laplacian",abs_Lap);
-	waitKey(0);
-	return 0;
+	namedWindow("Original image", CV_WINDOW_NORMAL);
+	imshow("Original Image", img);
+	namedWindow("Warped Image", CV_WINDOW_NORMAL);
+	namedWindow("Affine", CV_WINDOW_NORMAL);
+	int iAngle = 180;
+	createTrackbar("Angle", "Affine", &iAngle, 360);
+	int Percentage = 100;
+	double scale;
+	createTrackbar("Scale", "Affine", &Percentage, 200);
+	int iImageHeight = img.rows/2;
+	int iImageWidth = img.cols/2;
+	createTrackbar("XTranslation", "Affine", &iImageWidth, img.cols);
+	createTrackbar("YTranslation", "Affine", &iImageHeight, img.rows);
+	int key;
+	Mat imgwarped, matRotate, matTranslate, warpmat;
+	Mat increMat=(Mat_<double>(1,3)<<0,0,1);
+	while(true)
+	{
+		scale = (double) Percentage/100;
+		matRotate = getRotationMatrix2D(Point(iImageWidth, iImageHeight),
+		(iAngle-180), scale);
+		matTranslate = (Mat_<double>(3,1)<<(double)(iImageWidth-img.cols/2),(double)(iImageHeight-img.rows/2),1);
+		warpmat = matRotate * matTranslate;
+		Mat R_col = matRotate.col(2);
+		warpmat.copyTo(R_col);
+		warpAffine(img, imgwarped, matRotate, img.size());
+		imshow("Warped Image", imgwarped);
+		key = waitKey(30);
+		if ( key == 27 ) 
+		{
+			break;
+		}
+	
+	}
 }
