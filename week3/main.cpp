@@ -3,6 +3,7 @@
 #include <iostream>
 
 using namespace cv;
+using namespace std;
 
 void displayOpenCVVersion() {
 	std::cout << "OpenCV Version: " << std::endl << 
@@ -11,21 +12,29 @@ void displayOpenCVVersion() {
 int main()
 {
 	displayOpenCVVersion();
-	namedWindow( "Original Image", WINDOW_NORMAL );
-	namedWindow( "Smoothed Image", WINDOW_NORMAL );
-	//String projet_dir = std::getenv("UNI_COMPUTER_VISION");
-	Mat img = imread("/home/pjds/projects/ComputerVision/SamplePictures/sample.JPG");
-	imshow( "Original Image", img );
-	Mat smooth_img;
-	char text[35];
-	for (int i=5; i<=21; i=1+4) 
-	{
-		snprintf(text, 35, "Kernel Size : %d x %d", i, i);
-		GaussianBlur(img, smooth_img, Size( i, i ), 0, 0);
-		putText(smooth_img, text, Point(img.cols/4, img.rows/8),
-		CV_FONT_HERSHEY_COMPLEX, 1, Scalar(255, 255, 0), 2);
-		imshow("Smoothed Image", smooth_img);
-		waitKey(0);
-	}
+	Mat img = imread("/home/pjds/projects/ComputerVision/SamplePictures/building.jpg");
+	namedWindow("Original Image", CV_WINDOW_AUTOSIZE);
+	namedWindow("Sobel_X", CV_WINDOW_AUTOSIZE);
+	namedWindow("Sobel_Y", CV_WINDOW_AUTOSIZE);
+	namedWindow("Sobel", CV_WINDOW_AUTOSIZE);
+	namedWindow("Laplacian", CV_WINDOW_AUTOSIZE);
+	imshow("Original Image",img);
+	Mat smooth_img, gray_img;
+	GaussianBlur(img, smooth_img, Size(3, 3), 0, 0); //Gaussian smooth
+	cvtColor(smooth_img, gray_img, CV_BGR2GRAY); //convert to gray-level image
+	Mat grad_x, grad_y, abs_grad_x, abs_grad_y, SobelGrad;
+	Sobel(gray_img,grad_x,CV_32FC1,1,0);
+	convertScaleAbs(grad_x, abs_grad_x); //gradient X
+	imshow("Sobel_X",abs_grad_x);
+	Sobel(gray_img,grad_y,CV_32FC1,0,1);
+	convertScaleAbs(grad_y, abs_grad_y); //gradient Y
+	imshow("Sobel_Y",abs_grad_y);
+	addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0, SobelGrad); //total Sobel gradient
+	imshow("Sobel",SobelGrad);
+	Mat Lap, abs_Lap;
+	Laplacian(gray_img,Lap,CV_32FC1,3);
+	convertScaleAbs(Lap, abs_Lap); //Laplacian operator
+	imshow("Laplacian",abs_Lap);
+	waitKey(0);
 	return 0;
 }
