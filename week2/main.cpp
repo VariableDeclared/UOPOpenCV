@@ -22,12 +22,12 @@ void onMouse(int event, int x, int y, int flags, void* param)
 
 class SquareImage {
 	public:
-		SquareImage(String imageDirectory, String displayString) {
+		SquareImage(String imageDirectory, String displayString, MouseCallback callback) {
 			
 			
 			img = cvLoadImage(imageDirectory.c_str());
 			this->text = displayString;
-			
+			this->callback = callback;
 			
 			
 
@@ -35,7 +35,7 @@ class SquareImage {
 		void setupWindow() {
 			namedWindow("image", CV_WINDOW_AUTOSIZE);
 			cvShowImage("image", img);
-			setMouseCallback("image", onMouse, NULL);
+			setMouseCallback("image", this->callback, NULL);
 			waitKey(0);
 			
 
@@ -55,7 +55,7 @@ class SquareImage {
 		string text;	
 		IplImage *img;
 		CvFont font = cvFont(3);
-
+		MouseCallback callback;
 
 };
 
@@ -66,7 +66,7 @@ int main()
 	cout << "Enter a string for the rectangle" << endl;
 	cin >> text;
 
-	SquareImage sqrImageCls("/home/pjds/Downloads/leonardo.jpg", text);
+	SquareImage sqrImageCls("/home/pjds/Downloads/leonardo.jpg", text, onMouse);
 	sqrImageCls.setupWindow();
 	sqrImageCls.showImage(capturePoint[0], capturePoint[1]);
 	return 0;
