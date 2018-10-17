@@ -1,28 +1,36 @@
 #include "opencv2/highgui/highgui.hpp"
+
 using namespace cv;
 
 String samplePicturesPath = String(std::getenv("UNI_COMPUTER_VISION_DIR")) + "SamplePictures";
 
 int main()
 {
-	VideoCapture capture(samplePicturesPath + "/SampleVideo.mp4");
-	namedWindow("Original Video",CV_WINDOW_AUTOSIZE);
-	namedWindow("Brightness Increased",CV_WINDOW_AUTOSIZE);
-	namedWindow("Contrast Increased",CV_WINDOW_AUTOSIZE);
-	Mat frame, imgHB, imgHC;
-	int key = 0;
-	while(key != 27) // press "Esc" to stop
+	Mat img = imread(samplePicturesPath + "/building.jpg");
+	namedWindow("Original Image", CV_WINDOW_AUTOSIZE );
+	imshow("Original Image", img );
+	namedWindow("Brightness", CV_WINDOW_AUTOSIZE );
+	namedWindow("Contrast", CV_WINDOW_AUTOSIZE);
+	int iBright = 255;
+	createTrackbar("Bright", "Brightness", &iBright, 510);
+	int iPercentage = 100;
+	createTrackbar("Percentage", "Contrast", &iPercentage, 200);
+	int key,Brightness;
+	float Contrast;
+	Mat imgB,imgC;
+	while (true)
 	{
-		if (!capture.read(frame))
+		Brightness = iBright - 255;
+		img.convertTo(imgB, -1, 1, Brightness);
+		Contrast = (float)iPercentage / 100;
+		img.convertTo(imgC, -1, Contrast, 0);
+		imshow("Brightness", imgB);
+		imshow("Contrast", imgC);
+		key = waitKey(30);
+		if ( key == 27 )
 		{
 			break;
 		}
-		imgHB = frame + Scalar(75, 75, 75); //increase the brightness by 75 units
-		frame.convertTo(imgHC, -1, 2, 0); //increase the contrast (double)
-		imshow("Original Video", frame);
-		imshow("Brightness Increased", imgHB);
-		imshow("Contrast Increased", imgHC);
-		key=waitKey(30);
 	}
 	return 0;
 }
