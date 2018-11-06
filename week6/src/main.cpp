@@ -13,7 +13,7 @@ void displayOpenCVVersion() {
 		"v " << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << std::endl;
 }
 
-String samplePicturesPath = String(std::getenv("UNI_COMPUTER_VISION_DIR")) + "SamplePictures";
+String computerVisionProjectDir = String(std::getenv("UNI_COMPUTER_VISION_DIR")) + "SamplePictures";
 
 void onMouse(int event, int x, int y, int flags, void* param)
 {
@@ -28,10 +28,12 @@ void onMouse(int event, int x, int y, int flags, void* param)
 }
 
 
+bool compareRect(cv::Rect r1, cv::Rect r2) { return r1.height < r2.height; }
+
 int main()
 {
     
-   	string face_cascade_name = "N:/opencv/sources/data/haarcascades/haarcascade_frontalface_default.xml";
+   	string face_cascade_name = "/home/pjds/projects/ComputerVision/opencv-3.4.3/data/haarcascades/haarcascade_frontalface_default.xml";
 	CascadeClassifier face_cascade;
 	if( !face_cascade.load( face_cascade_name ) )
 	{ 
@@ -47,20 +49,34 @@ int main()
 		return -1;
 	}
 	Mat frame;
-	int key = 0;
+	string name,fullfile;
+	cout<<"Please input your name: ";
+	cin>>name;
+	string path = computerVisionProjectDir + "/faces";
 	namedWindow("face", CV_WINDOW_AUTOSIZE);
+	namedWindow("collection", CV_WINDOW_AUTOSIZE);
+	char key = 0;
+	int count = 0;
 	while(key != 27) //press "Esc" to stop
 	{
 		capture>>frame;
 		face_cascade.detectMultiScale(frame, faces, 1.2, 2, 0, Size(50,50)); //detect faces
 		if (faces.empty()) { //no faces are detected
-			cv::imshow("face", frame);
+			imshow("face", frame);
 			key = waitKey(30);
 			continue;
 		}
-		int faces_length = faces.size();
-		for (int i = 0; i < faces_length; i++)
-			rectangle(frame,faces[i],Scalar(0,0,255)); //draw rectangle
+		if (key == 'c') //press "c" to take a picture
+		{
+			stringstream name_count;
+			name_count<<++count;
+			fullfile = path + name + name_count.str() + ".jpg";
+			imwrite(fullfile,frame); //save the picture
+			imshow("collection",frame);
+			key = waitKey(30);
+		}
+		Rect facerect=*max_element(faces.begin(),faces.end(),compareRect); //only the largest face bounding box are maintained
+		rectangle(frame,facerect,Scalar(0,0,255)); //draw rectangle
 		imshow("face", frame);
 		key = waitKey(30);
 	}
