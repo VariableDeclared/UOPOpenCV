@@ -12,13 +12,13 @@ set(
     SOURCE
     ${SOURCE}
     ${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/VisionClass.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/cvtutorial.cpp
     ${PARENT_DIRECTORY}
 )
 set(
   HEADERS
   ${HEADERS}
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/VisionClass.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/cvtutorial.hpp
   ${PARENT_DIRECTORY}
 )
 
