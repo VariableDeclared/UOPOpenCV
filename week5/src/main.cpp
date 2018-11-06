@@ -6,6 +6,7 @@
 
 using namespace cv;
 using namespace ComputerVision;
+using namespace std;
 
 void displayOpenCVVersion() {
 	std::cout << "OpenCV Version: " << std::endl << 
@@ -31,10 +32,16 @@ int main()
 {
     displayOpenCVVersion();
 
-    SquareImage imgClass(samplePicturesPath + "/building.jpg", "Image Display", onMouse);
+    Mat img = imread(samplePicturesPath + "/building.jpg", 0);
+
+    Mat grayHist;
     
-    imgClass.setupWindow(WINDOW_AUTOSIZE);
-    imgClass.windowLoop();
-    
+    int histSize = 256;
+    float range[] = { 0, 256 };
+    const float * histRange = { range };
+
+    calcHist(&img, 1, 0, Mat(), grayHist, 1, &histSize, &histRange);
+    cout << grayHist << endl;
+
 	return 0;
 }
