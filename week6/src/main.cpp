@@ -13,15 +13,27 @@ void displayOpenCVVersion() {
 		"v " << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << std::endl;
 }
 
-String computerVisionProjectDir = String(std::getenv("UNI_COMPUTER_VISION_DIR")) + "SamplePictures";
+String computerVisionProjectDir = String(std::getenv("UNI_COMPUTER_VISION_DIR"));
+string name,fullfile;
+
+string path = computerVisionProjectDir + "/faces/";
+
 
 void onMouse(int event, int x, int y, int flags, void* param)
 {
+	
+	Mat* frame = (Mat*) param;
+	int count = 5;
     int n = 0;
     switch(event) 
     {
         case EVENT_LBUTTONDOWN:
-
+			stringstream name_count;
+			name_count<<++count;
+			cout << "Saving to: " + path + name + name_count.str() + ".jpg";
+			fullfile = path + name + name_count.str() + ".jpg";
+			imwrite(fullfile, *frame); //save the picture
+			imshow("collection", *frame);
         break;
 
     }
@@ -48,15 +60,16 @@ int main()
 		cout << "Cannot open the video file" << endl;
 		return -1;
 	}
-	Mat frame;
-	string name,fullfile;
+	
+	
 	cout<<"Please input your name: ";
 	cin>>name;
-	string path = computerVisionProjectDir + "/faces";
+	Mat frame;
 	namedWindow("face", CV_WINDOW_AUTOSIZE);
+	setMouseCallback("face", onMouse, &frame);
 	namedWindow("collection", CV_WINDOW_AUTOSIZE);
 	char key = 0;
-	int count = 0;
+
 	while(key != 27) //press "Esc" to stop
 	{
 		capture>>frame;
@@ -66,15 +79,7 @@ int main()
 			key = waitKey(30);
 			continue;
 		}
-		if (key == 'c') //press "c" to take a picture
-		{
-			stringstream name_count;
-			name_count<<++count;
-			fullfile = path + name + name_count.str() + ".jpg";
-			imwrite(fullfile,frame); //save the picture
-			imshow("collection",frame);
-			key = waitKey(30);
-		}
+		
 		Rect facerect=*max_element(faces.begin(),faces.end(),compareRect); //only the largest face bounding box are maintained
 		rectangle(frame,facerect,Scalar(0,0,255)); //draw rectangle
 		imshow("face", frame);
