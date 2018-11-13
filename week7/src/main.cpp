@@ -2,6 +2,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/objdetect/objdetect.hpp"
 #include "../include/cvtutorial.hpp"
+#include "../include/FaceAnalysis.hpp"
 
 using namespace cv;
 // using namespace ComputerVision;
@@ -17,11 +18,13 @@ void displayOpenCVVersion() {
 String computerVisionProjectDir = String(std::getenv("UNI_COMPUTER_VISION_DIR"));
 
 
-bool compareRect(cv::Rect r1, cv::Rect r2) { return r1.height < r2.height; }
 
 int main()
 {
-	cvtutorial a;
-	a.FaceCollection(computerVisionProjectDir + "/faces/");
+	// cvtutorial a;
+	// a.FaceCollection(computerVisionProjectDir + "/faces/");
 
+	FaceAnalysis fa;
+
+	fa.FR(false);
 }
