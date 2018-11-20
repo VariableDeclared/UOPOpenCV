@@ -25,6 +25,6 @@ int main()
 	// a.FaceCollection(computerVisionProjectDir + "/faces/");
 
 	FaceAnalysis fa;
-
+	fa.FRTrain(true);
 	fa.FR(false);
 }

@@ -2,12 +2,14 @@
 #include "../include/cv_util.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/objdetect.hpp"
+#include "opencv2/objdetect/objdetect.hpp"
 #include "opencv2/ml/ml.hpp"
 #include "opencv2/ml.hpp"
 #include <iostream>
 #include <fstream>
 #include <vector>
+
+#define COMPVIS_DEBUG
 
 using namespace std;
 using namespace cv;
@@ -57,20 +59,29 @@ void FaceAnalysis::read_csv(const string& filename, vector<Mat> & images,
 
 Rect FaceAnalysis::FaceDetection(Mat img) 
 {
+#ifdef COMPVIS_DEBUG
+    cout << "Loaded face cascade: " << cv_tut_util::getOpenCVSourceDir() + "data/haarcascades/haarcascade_frontalface_default.xml" << endl;
+#endif
     string face_cascade_name = cv_tut_util::getOpenCVSourceDir() + "data/haarcascades/haarcascade_frontalface_default.xml";
     CascadeClassifier face_cascade;
-    if(!face_cascade.load( face_cascade_name ))
+    if( !face_cascade.load( face_cascade_name ) )
     {
+
+#ifdef COMPVIS_DEBUG
         cerr << "Error loading face detection model." << endl;
+#endif
         exit(0);
     }
     vector<Rect> faces;
     face_cascade.detectMultiScale(img, faces, 1.2, 2, 0, Size(50,50)); //detect faces
-    if (faces.empty());
+    if (faces.empty())
+    {
+        cout << "No face found" << endl;
         return Rect();
-    Rect faceRect = *max_element(faces.begin(), faces.end(),[](Rect r1, Rect r2) {
-        return r1.height < r2.height;
-    });
+    }   
+    Rect faceRect = *max_element(faces.begin(),faces.end(),[](Rect r1, Rect r2) { 
+        return r1.height < r2.height; 
+    }); //only the largest face bounding box are maintained
     return faceRect;
 }
 
@@ -294,8 +305,7 @@ void FaceAnalysis::FR(bool loadSVM)
             key = waitKey(30);
             continue;
         }
-        cout << "THERES A FACE" << endl;
-        cvtColor(frame(faceRect), Gray_img, CV_BGR2GRAY); //change color image to it's gray scale.
+        cvtColor(frame, Gray_img, CV_BGR2GRAY); //change color image to it's gray scale.
         Mat normFace;
         resize(Gray_img, normFace, Size(80, 80));
         Mat lbp_image = elbp(normFace, 1, 8);

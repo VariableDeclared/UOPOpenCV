@@ -14,6 +14,9 @@ class cvtutorial
     private:
         static void onMouse(int event, int x, int y, int, void* userdata);
         void onMouse(int event, int x, int y);
+
+    string name,fullfile;
+    string path;
 };
 
 #endif

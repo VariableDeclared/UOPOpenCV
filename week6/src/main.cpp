@@ -22,6 +22,6 @@ bool compareRect(cv::Rect r1, cv::Rect r2) { return r1.height < r2.height; }
 int main()
 {
 	cvtutorial a;
-	a.FaceCollection(computerVisionProjectDir + "/faces/");
+	a.FaceCollection(computerVisionProjectDir + "faces/");
 
 }

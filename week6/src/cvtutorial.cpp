@@ -1,4 +1,4 @@
-#include "cvtutorial.hpp"
+#include "../include/cvtutorial.hpp"
 #include "opencv2/opencv.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/objdetect/objdetect.hpp"
@@ -10,8 +10,7 @@ using namespace cv;
 using namespace std;
 
 
-string name,fullfile;
-string path;
+
 
 
 
@@ -33,7 +32,7 @@ void cvtutorial::onMouse(int event, int x, int y)
 			stringstream name_count;
 			name_count<<++count;
 			cout << "Saving to: " + path + name + name_count.str() + ".jpg";
-			fullfile = path + name + name_count.str() + ".jpg";
+			fullfile = path + this->name + name_count.str() + ".jpg";
 			imwrite(fullfile, this->frame); //save the picture
 			imshow("collection", this->frame);
         break;
@@ -60,9 +59,8 @@ int cvtutorial::FaceCollection(string output_path)
 		return -1;
 	}
 	
-	string name,fullfile;
 	cout<<"Please input your name: ";
-	cin>>name;
+	cin>>this->name;
 	namedWindow("face", CV_WINDOW_AUTOSIZE);
     setMouseCallback("face", cvtutorial::onMouse, this);
 	namedWindow("collection", CV_WINDOW_AUTOSIZE);

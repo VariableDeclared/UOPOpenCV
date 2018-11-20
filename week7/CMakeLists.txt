@@ -30,8 +30,8 @@ set(
 )
 
 set( CMAKE_BUILD_TYPE Debug)
-
-set(CMAKE_C_FLAGS_DEBUG "-DDEBUG")
+# add_compile_definitions(COMPVIS_DEBUG
+# set(CMAKE_C_FLAGS_DEBUG "-DCOMPVIS_DEBUG")
 # file(GLOB HEADERS
 #     "*.hpp"
 # )
