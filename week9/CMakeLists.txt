@@ -18,6 +18,7 @@ set(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/FaceAnalysis.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/cvtutorial.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/cv_util.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/dlib/all/source.cpp
     ${PARENT_DIRECTORY}
 )
 set(
@@ -37,11 +38,12 @@ set( CMAKE_BUILD_TYPE Debug)
 # )
 
 include_directories(include)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/src/dlib dlib_build)
 find_package( OpenCV REQUIRED )
 
 
 add_executable( ${PROJECT_EXECUTABLE_NAME} ${SOURCE} ${HEADERS} )
 set_target_properties( ${PROJECT_EXECUTABLE_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 # target_include_directories( ComputerVision PRIVATE include/VisionClass.hpp )
-target_link_libraries( ${PROJECT_EXECUTABLE_NAME} ${OpenCV_LIBS} )
+target_link_libraries( ${PROJECT_EXECUTABLE_NAME} ${OpenCV_LIBS} dlib::dlib -lpthread)
 

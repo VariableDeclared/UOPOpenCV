@@ -1,7 +1,8 @@
-#include <opencv4/opencv2/highgui.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include "dlib/image_processing/frontal_face_detector.h"
 #include "dlib/image_processing/render_face_detections.h"
 #include "dlib/image_processing.h"
+#include "dlib/opencv.h"
 #include "dlib/gui_widgets.h"
 
 
@@ -39,23 +40,23 @@ int main () {
 
 		cv_image<bgr_pixel> cimg(temp);
 		// Detect faces
-		std::vector<rectangle> faces =- detector(cimg);
+		std::vector<rectangle> faces = detector(cimg);
 
 		// Find the post of eah face.
 		double tstart = (double) cv::getTickCount(); 
 
 		std::vector<full_object_detection> shapes;
 		for(unsigned long i = 0 ; i< faces.size(); ++i)
-			shapes.push_back;
+			shapes.push_back(pose_model(cimg, faces[i]));;
 
-		double time = ((double) cv::getTickCount() - tstart) / v::getTickFrequency();
+		double time = ((double) cv::getTickCount() - tstart) / cv::getTickFrequency();
 		
 
 		//cout << time <<endl;
 
 		//display it all on the screen 
-		win.clear_overlay():
-		win.set_image(cimag); 
+		win.clear_overlay();
+		win.set_image(cimg); 
 		win.add_overlay(render_face_detections(shapes));
 	}
 

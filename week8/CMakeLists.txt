@@ -37,7 +37,7 @@ set( CMAKE_BUILD_TYPE Debug)
 # )
 
 include_directories(include)
-find_package( OpenCV REQUIRED )
+find_package( OpenCV 3.4.5 REQUIRED )
 
 
 add_executable( ${PROJECT_EXECUTABLE_NAME} ${SOURCE} ${HEADERS} )
