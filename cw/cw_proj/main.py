@@ -60,23 +60,30 @@ def load_CAD60_dataset_OLD():
 
     return np.array(class_ids_to_arrays), label_names
 
+def lable_to_index(labels):
+    index = 0
+    label_index = {}
+    for label in labels:
+        label_index[label] = index
+        index += 1
+
+    return label_index
 
 def load_CAD60_dataset(num_samples=1):
     labels = load_cad60labels()
-
-    labels_to_images = {}
+    label_to_index = lable_to_index(labels)
+    imgs = []
+    targets = []
     index = 0
-    for label in labels:
-        img = cv.imread("%s/%s/Depth_1.png" % (CAD60_DIR, label))
-        labels_to_images[index] = np.array(img, dtype=np.float32).flatten("F")
-        index += 1
-
-    return labels_to_images
-
-
-
-
-
+    for sample in range(1, num_samples):
+        for label in labels:
+            img = cv.imread("%s/%s/Depth_%s.png" % (CAD60_DIR, label, sample))
+            data = np.array(img, dtype=np.float32)
+            # print("[INFO] Img Shape: {}".format(data.shape))
+            imgs.append(data.flatten())
+            targets.append(label_to_index[label])
+            index += 1
+    return imgs, targets
 
 def get_hog_features(
     img,
@@ -176,23 +183,23 @@ def read_labels(label_fh):
 def get_files():
     pass
 
-def run_analysis():
+def train():
     num_samples = 100
-    label_to_img = load_CAD60_dataset(num_samples)
+    images, targets = load_CAD60_dataset(num_samples)
 
 
 
-    # Take 1000 frames
-    train_images = {}
+
 
 
     svm = cv.ml.SVM_create()
     svm.setType(cv.ml.SVM_C_SVC)
     svm.setKernel(cv.ml.SVM_LINEAR)
     svm.setTermCriteria((cv.TERM_CRITERIA_MAX_ITER, 100, 1e-6))
-    print("[INFO] Keys: %s" % label_to_img.keys())
-    svm.train(np.array(list(label_to_img.values())), cv.ml.ROW_SAMPLE, np.array(list(label_to_img.keys())))
+    # print("[INFO] Keys: %s" % label_to_img.())
+    svm.train(np.array(images), cv.ml.ROW_SAMPLE, np.array(targets))
 
+    svm.save("trained_/svm")
 
     # svm.train(trainingData, cv.ml.ROW_SAMPLE, labels)
     pass
@@ -200,4 +207,4 @@ def run_analysis():
 
 
 if __name__ == "__main__":
-    run_analysis()
+    train()
