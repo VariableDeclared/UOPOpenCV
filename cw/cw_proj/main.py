@@ -5,6 +5,7 @@ import fnmatch
 import re
 import time
 import skimage
+import tensorflow as tf
 
 CAD60_DIR = os.environ["CAD_DIR"]
 NTU_DIR = os.environ["NTU_DIR"]
@@ -223,7 +224,30 @@ def extract_features(image, color_space='RGB', spatial_size=(32, 32),
     file_features.append(hog_features)
     return file_features
 
+
+def create_ltsm(input_shape, ltsm_layers, num_classes):
+    model = tf.keras.Sequential()
+
+    model.add(tf.keras.layers.Dense(64, input_shape=input_shape))
+    model.add(tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)))
+    model.add(tf.keras.layers.Dense(64))
+    model.add(tf.keras.layers.Dense(num_classes, activation='sigmoid'))
+
+    return model
+
+
 def rnn_train():
+    # tick when done - ✓
+    # create ltsm ✓
+    # compile ✓
+    model = create_ltsm()
+    model.compile(
+        optimizer=tf.optimizers.Adadelta(),
+        loss=tf.losses.MeanAbsolutePercentageError()
+    )
+
+    # fit
+    # save
     pass
 
 
