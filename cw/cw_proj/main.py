@@ -7,6 +7,8 @@ import time
 import skimage
 
 CAD60_DIR = os.environ["CAD_DIR"]
+NTU_DIR = os.environ["NTU_DIR"]
+
 
 def load_cad60labels():
     labels = {}
@@ -20,6 +22,7 @@ def load_cad60labels():
             labels[label] = (label_name, index)
             index += 1
     return labels
+
 
 def load_CAD60_dataset_OLD():
     folders = {}
@@ -84,6 +87,54 @@ def load_CAD60_dataset(num_samples=1):
             targets.append(label_to_index[label])
             index += 1
     return imgs, targets
+
+
+def load_NTU_labels(dataset_dir):
+    lines = open("{}/ntu_labels.txt".format(dataset_dir), "r").readlines()
+    labels = {}
+    count = 1
+    for line in lines:
+        labels[count] = line
+        count += 1
+    return labels
+
+
+def load_NTU_dataset(num_samples=1):
+    NTU_masked = os.environ["NTU_DIR_masked"]
+    NTU_depth = os.environ["NTU_DIR_depth"]
+    labels = load_NTU_labels(NTU_masked)
+
+    id2masks = {}
+    id2depth = {}
+
+    print("[INFO] Loading dataset")
+
+    for lbl_id in labels:
+        # zfill - adds padding zeros.
+        # IE: str(1).zfill(3) == 001... or .zfill(2) == 01... and so on.
+        masked_imgs = os.listdir("{}/S001C001P001R001A{}".format(
+                NTU_masked,
+                str(lbl_id).zfill(3)
+            )
+        )
+        id2masks[lbl_id] = masked_imgs
+
+        depth_imgs = os.listdir("{}/S001C001P001R001A{}".format(
+                NTU_depth,
+                str(lbl_id).zfill(3)
+            )
+        )
+        id2depth[lbl_id] = depth_imgs
+
+        import json
+        json.dump({
+            "id2depth": id2depth,
+            "id2mask": id2masks
+        }, open("dataset_ntu_dump.json", "w"))
+
+
+    return id2masks, id2depth
+
 
 def get_hog_features(
     img,
@@ -172,6 +223,20 @@ def extract_features(image, color_space='RGB', spatial_size=(32, 32),
     file_features.append(hog_features)
     return file_features
 
+def rnn_train():
+    pass
+
+
+def cnn_train():
+    pass
+
+
+def cnn_predict():
+    pass
+
+
+def rnn_predict():
+    pass
 
 
 def read_train():
@@ -186,10 +251,6 @@ def get_files():
 def train():
     num_samples = 100
     images, targets = load_CAD60_dataset(num_samples)
-
-
-
-
 
 
     svm = cv.ml.SVM_create()
