@@ -1,5 +1,6 @@
 import cv2 as cv
 import numpy as np
+import random
 import os
 import fnmatch
 import re
@@ -110,21 +111,31 @@ def load_NTU_dataset(num_samples=1):
 
     print("[INFO] Loading dataset")
 
+    def map2fullpath(path):
+        return list(
+            map(
+                lambda x: "{}/{}".format(path, x),
+                os.listdir(path)
+            )
+        )
+
     for lbl_id in labels:
         # zfill - adds padding zeros.
         # IE: str(1).zfill(3) == 001... or .zfill(2) == 01... and so on.
-        masked_imgs = os.listdir("{}/S001C001P001R001A{}".format(
-                NTU_masked,
-                str(lbl_id).zfill(3)
-            )
+        masked_dir = "{}/S001C001P001R001A{}".format(
+            NTU_masked,
+            str(lbl_id).zfill(3)
         )
-        id2masks[lbl_id] = masked_imgs
 
-        depth_imgs = os.listdir("{}/S001C001P001R001A{}".format(
-                NTU_depth,
-                str(lbl_id).zfill(3)
-            )
+        masked_imgs = map2fullpath(masked_dir)
+
+        id2masks[lbl_id] = masked_imgs
+        depth_dir = "{}/S001C001P001R001A{}".format(
+            NTU_depth,
+            str(lbl_id).zfill(3)
         )
+
+        depth_imgs = map2fullpath(depth_dir)
         id2depth[lbl_id] = depth_imgs
 
         import json
@@ -236,17 +247,39 @@ def create_ltsm(input_shape, ltsm_layers, num_classes):
     return model
 
 
+
+def dataset2imgs(img_dict, num_samples, img_shape):
+    imgs = []
+    class_ids = []
+    for classid in img_dict:
+        for sample in range(num_samples):
+            img = cv.imread(img_dict[classid][sample], cv.IMREAD_GRAYSCALE)
+            # img = cv.resize(img, img_shape)
+            imgs.append(img)
+            class_ids.append(classid)
+    return np.array(imgs), class_ids
+
+
 def rnn_train():
     # tick when done - ✓
     # create ltsm ✓
     # compile ✓
-    model = create_ltsm()
+
+    num_samples = 50
+    depth_images = load_NTU_dataset(num_samples)[1]
+    image_shape =  (424, 512) # cv.imread(depth_images[1][0]).shape[:2]
+    num_classes = len(depth_images.keys())
+
+    model = create_ltsm(image_shape, 64, num_classes)
     model.compile(
         optimizer=tf.optimizers.Adadelta(),
         loss=tf.losses.MeanAbsolutePercentageError()
     )
 
+    imgs, class_ids = dataset2imgs(depth_images, num_samples, image_shape)
+
     # fit
+
     # save
     pass
 
