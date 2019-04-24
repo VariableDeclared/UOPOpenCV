@@ -7,8 +7,9 @@ import re
 import time
 import skimage
 import tensorflow as tf
+from pathlib import Path
 
-CAD60_DIR = os.environ["CAD_DIR"]
+CAD60_DIR = "" #os.environ["CAD_DIR"]
 NTU_DIR = os.environ["NTU_DIR"]
 
 
@@ -92,7 +93,7 @@ def load_CAD60_dataset(num_samples=1):
 
 
 def load_NTU_labels(dataset_dir):
-    lines = open("{}/ntu_labels.txt".format(dataset_dir), "r").readlines()
+    lines = open(Path("{}/ntu_labels.txt".format(dataset_dir)), "r").readlines()
     labels = {}
     count = 1
     for line in lines:
@@ -122,17 +123,21 @@ def load_NTU_dataset(num_samples=1):
     for lbl_id in labels:
         # zfill - adds padding zeros.
         # IE: str(1).zfill(3) == 001... or .zfill(2) == 01... and so on.
-        masked_dir = "{}/S001C001P001R001A{}".format(
-            NTU_masked,
-            str(lbl_id).zfill(3)
+        masked_dir = Path(
+            "{}/S001C001P001R001A{}".format(
+                NTU_masked,
+                str(lbl_id).zfill(3)
+            )
         )
 
         masked_imgs = map2fullpath(masked_dir)
 
         id2masks[lbl_id] = masked_imgs
-        depth_dir = "{}/S001C001P001R001A{}".format(
-            NTU_depth,
-            str(lbl_id).zfill(3)
+        depth_dir = Path(
+            "{}/S001C001P001R001A{}".format(
+                NTU_depth,
+                str(lbl_id).zfill(3)
+            )
         )
 
         depth_imgs = map2fullpath(depth_dir)
@@ -236,15 +241,23 @@ def extract_features(image, color_space='RGB', spatial_size=(32, 32),
     return file_features
 
 
-def create_ltsm(input_shape, ltsm_layers, num_classes):
-    model = tf.keras.Sequential()
+def create_model(input_shape, ltsm_layers, num_classes, conv_layers_num):
+    #https://machinelearningmastery.com/cnn-long-short-term-memory-networks/
+    cnn = tf.keras.Sequential()
+    lstm = tf.keras.Sequential()
 
-    model.add(tf.keras.layers.Dense(64, input_shape=input_shape))
-    model.add(tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)))
-    model.add(tf.keras.layers.Dense(64))
-    model.add(tf.keras.layers.Dense(num_classes, activation='sigmoid'))
 
-    return model
+    cnn.add(tf.keras.layers.Conv2D(3, (5, 5), activation="relu", input_shape=(input_shape, input_shape, 1)))
+    cnn.add(tf.keras.layers.MaxPooling2D((5, 5)))
+    cnn.add(tf.keras.layers.Conv2D(3, (5, 5), activation="relu", input_shape=(input_shape, input_shape, 1)))
+    cnn.add(tf.keras.layers.MaxPooling2D((5, 5)))
+    cnn.add(tf.keras.layers.Flatten())
+    lstm.add(tf.keras.layers.TimeDistributed(cnn))
+    lstm.add(tf.keras.layers.LSTM(64))
+    lstm.add(tf.keras.layers.Dense(64))
+    lstm.add(tf.keras.layers.Dense(num_classes, activation='sigmoid'))
+
+    return lstm
 
 
 
@@ -253,8 +266,10 @@ def dataset2imgs(img_dict, num_samples, img_shape):
     class_ids = []
     for classid in img_dict:
         for sample in range(num_samples):
-            img = cv.imread(img_dict[classid][sample], cv.IMREAD_GRAYSCALE)
-            # img = cv.resize(img, img_shape)
+            img = cv.imread(img_dict[classid][sample], cv.IMREAD_COLOR)
+            img = cv.resize(
+                img,
+                (img_shape, img_shape)).reshape(img_shape, img_shape, 3).astype("float32")
             imgs.append(img)
             class_ids.append(classid)
     return np.array(imgs), class_ids
@@ -266,19 +281,19 @@ def rnn_train():
     # compile ✓
 
     num_samples = 50
-    depth_images = load_NTU_dataset(num_samples)[1]
-    image_shape =  (424, 512) # cv.imread(depth_images[1][0]).shape[:2]
+    depth_images = load_NTU_dataset(num_samples)[0]
+    image_shape =  256 # cv.imread(depth_images[1][0]).shape[:2]
     num_classes = len(depth_images.keys())
 
-    model = create_ltsm(image_shape, 64, num_classes)
+    model = create_model(image_shape, 64, num_classes)
     model.compile(
-        optimizer=tf.optimizers.Adadelta(),
+        optimizer=tf.optimizers.Adam(),
         loss=tf.losses.MeanAbsolutePercentageError()
     )
 
     imgs, class_ids = dataset2imgs(depth_images, num_samples, image_shape)
 
-    # fit
+    # fit ✓ - working on it.
 
     # save
     pass
