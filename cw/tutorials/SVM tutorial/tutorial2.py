@@ -1,11 +1,7 @@
-
 import numpy as np
 import pandas as pd
-
 from subprocess import check_output
-
 import matplotlib.pyplot as plt
-
 from sklearn import datasets, svm, metrics
 
 digits = datasets.load_digits()

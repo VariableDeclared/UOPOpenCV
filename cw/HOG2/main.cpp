@@ -2,9 +2,13 @@
 #ifndef OPENCV_ALL_HPP
 #include <opencv2/opencv.hpp>
 #endif
+#include <opencv2/ml/ml.hpp>
+#include <boost/algorithm/string.hpp>
+
 
 using namespace cv;
 using namespace std;
+using namespace ml;
 
 Mat get_hogdescriptor_visu(const Mat& color_origImg, vector<float>& descriptorValues, const Size & size )
 {
@@ -164,7 +168,31 @@ Mat get_hogdescriptor_visu(const Mat& color_origImg, vector<float>& descriptorVa
 
 } // get_hogdescriptor_visu
 
+void loadLabels(vector<int>& trainLabels, vector<string>& strLabels) {
+    // vector<int> labels;
 
+    typedef vector<string> split_vector_type;
+
+    split_vector_type SplitVec;
+
+    ifstream labelFile;
+
+    labelFile.open("labels.txt");
+    string line;
+    int i = 0;
+    while (getline(labelFile, line)){
+        trainLabels.push_back(i);
+        boost::split(SplitVec, line, boost::is_any_of(" "));
+        strLabels.push_back(SplitVec.at(1));
+        i++;
+    }
+
+
+}
+
+
+// void runHOGOnImages(vector<vector<float>& descriptors, )
+//
 
 int main(int argc, char** argv) {
 
@@ -182,13 +210,28 @@ int main(int argc, char** argv) {
     vector<Point> locations;
 
     desc.compute(im, descriptorsValues, Size(0, 0), Size(0, 0), locations);
-    cout << "HOG descriptor size is " << desc.getDescriptorSize() << endl;
-    cout << "img dimensions: " << im.cols << " width x " << im.rows << "height" << endl;
-    cout << "Found " << descriptorsValues.size() << " descriptor values" << endl;
-    cout << "Nr of locations specified : " << locations.size() << endl;
-    Mat visu = get_hogdescriptor_visu(im, descriptorsValues, Size(64,128));
+    // cout << "HOG descriptor size is " << desc.getDescriptorSize() << endl;
+    // cout << "img dimensions: " << im.cols << " width x " << im.rows << "height" << endl;
+    // cout << "Found " << descriptorsValues.size() << " descriptor values" << endl;
+
+    // cout << "Nr of locations specified : " << locations.size() << endl;
+    Mat visu = get_hogdescriptor_visu(im, descriptorsValues, Size(im.cols,im.rows));
 
     imshow("HOG", visu);
     waitKey();
+
+    Ptr<SVM> svm = SVM::create();
+
+    svm->setGamma(0.4);
+    svm->setC(0.2);
+    svm->setKernel(SVM::RBF);
+    svm->setType(SVM::C_SVC);
+
+
+
+    // Think about bringing in SURF.
+
+
+
 
 }

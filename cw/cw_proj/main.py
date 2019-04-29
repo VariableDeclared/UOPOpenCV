@@ -101,6 +101,13 @@ def load_NTU_labels(dataset_dir):
         count += 1
     return labels
 
+def map2fullpath(path, limit):
+    return list(
+        map(
+            lambda x: "{}/{}".format(path, x),
+            os.listdir(path)[:limit]
+        )
+    )
 
 def load_NTU_dataset(num_samples=1):
     NTU_masked = os.environ["NTU_DIR_masked"]
@@ -112,13 +119,6 @@ def load_NTU_dataset(num_samples=1):
 
     print("[INFO] Loading dataset")
 
-    def map2fullpath(path):
-        return list(
-            map(
-                lambda x: "{}/{}".format(path, x),
-                os.listdir(path)
-            )
-        )
 
     for lbl_id in labels:
         # zfill - adds padding zeros.
@@ -285,58 +285,85 @@ def dataset2imgs(img_dict, num_samples, img_shape):
 def create_model_v2(img_size, num_classes):
     # Last night's parameters Conv2D(32.... ), MaxPooling2D(....pool_size=(2, 2))
     # https://medium.com/nybles/create-your-first-image-recognition-classifier-using-cnn-keras-and-tensorflow-backend-6eaab98d14dd
+    cnn = tf.keras.Sequential()
+    cnn.add(tf.keras.layers.Conv2D(50, (3, 3), activation="relu"))
+    cnn.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+    cnn.add(tf.keras.layers.Conv2D(100, (3, 3), activation="relu"))
+    cnn.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+    cnn.add(tf.keras.layers.Conv2D(50, (3, 3), activation="relu"))
+    cnn.add(tf.keras.layers.Flatten())
     model = tf.keras.Sequential()
-    model.add(tf.keras.layers.Conv2D(50, (3, 3), input_shape=(img_size, img_size, 3), activation="relu"))
-    model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
-    model.add(tf.keras.layers.Conv2D(100, (3, 3), activation="relu"))
-    model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
-    model.add(tf.keras.layers.Conv2D(50, (3, 3), activation="relu"))
-    model.add(tf.keras.layers.Flatten())
-    model.add(tf.keras.layers.Dense(128, activation="relu"))
-    model.add(tf.keras.layers.Dense(128, activation="relu"))
-    model.add(tf.keras.layers.Dense(128, activation="relu"))
+    model.add(tf.keras.layers.TimeDistributed(cnn,  input_shape=(50, img_size, img_size, 1)))
+    model.add(tf.keras.layers.LSTM(8))
+    model.add(tf.keras.layers.Dense(64))
+
 
     model.add(tf.keras.layers.Dense(num_classes, activation="sigmoid"))
 
     return model
 
+
+def load_ntu_v2():
+    # Load train
+    # - S001C001P006R001A0NN/imgs
+    # Array shape: (number_of_videos, frames, width, height, channels)
+    #               (60, 50, 256, 256, 1)
+    # Load frames into arr (per folder)
+    # Put folders into arr (Classes)
+
+    # Load test
+    NTU_DIR = os.environ["NTU_DIR"]
+    def load_folder(img_path, frame_limit):
+        # img_path is NTU_DIR/{test-train}/
+        folders = os.listdir(img_path)
+        list_of_folders = []
+        classes = []
+        for folder in folders:
+            imgs = []
+            for fn in map2fullpath("{}/{}".format(img_path, folder), frame_limit):
+                img = cv.imread(fn, cv.IMREAD_GRAYSCALE)
+                img = cv.resize(img, (256, 256)).reshape((256, 256, 1)).astype("float32")
+                imgs.append(img)
+
+            list_of_folders.append(np.array(imgs))
+            classes.append(int(folder[-3:])-1)
+
+
+        return np.array(list_of_folders), np.array(classes)
+
+    # Array shape: (number_of_videos, frames, width, height, channels)
+    #               (3000, 50, 256, 256, 1)
+    number_of_videos = 3000 # 60*50
+    frames = 50
+
+    x_train, y_train = load_folder("{}/{}".format(NTU_DIR, "train"), frames)
+    x_val, y_val = load_folder("{}/{}".format(NTU_DIR, "test"), frames)
+
+    from tensorflow.keras.utils import to_categorical
+    return x_train, to_categorical(y_train), x_val, to_categorical(y_val)
+
+
 def testv2():
 
+
+    print("[INFO] Loading dataset.")
+    x_train, y_train, x_val, y_val = load_ntu_v2()
+
     model = create_model_v2(256, 60)
-    train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
-        rescale=1./255,
-        shear_range=0.2,
-        zoom_range=0.2,
-        horizontal_flip=True
-    )
-    training_set = train_datagen.flow_from_directory(
-        "{}/{}".format(os.environ["NTU_DIR"], "S001C001P006R001AN"),
-        target_size=(256, 256),
-        batch_size=32,
-        class_mode="categorical"
-    )
 
-
-    test_set = train_datagen.flow_from_directory(
-        "{}/{}".format(os.environ["NTU_DIR"], "S001C001P003R001AN"),
-        target_size=(256, 256),
-        batch_size=32,
-        class_mode="categorical"
-    )
-
-    from IPython.display import display
-    from PIL import Image
     model.compile(
         optimizer=tf.optimizers.RMSprop(),
         loss=tf.losses.CategoricalCrossentropy(),
         metrics=["accuracy"]
     )
-    model.fit_generator(
-        training_set,
-        steps_per_epoch=8000,
-        epochs=10,
-        validation_data=test_set,
-        validation_steps=800
+    model.summary()
+    # return training_set
+    model.fit(
+        x_train,
+        y_train,
+        batch_size=4,
+        epochs=1200,
+        validation_data=(x_val, y_val)
     )
     import datetime
     model.save("run:{}".format(datetime.datetime.now()))
