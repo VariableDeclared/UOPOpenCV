@@ -282,7 +282,7 @@ def dataset2imgs(img_dict, num_samples, img_shape):
     return np.array(imgs), loaded_classes
 
 
-def create_model_v2(img_size, num_classes):
+def create_model_v2(img_size, num_classes, frame_limit):
     # Last night's parameters Conv2D(32.... ), MaxPooling2D(....pool_size=(2, 2))
     # https://medium.com/nybles/create-your-first-image-recognition-classifier-using-cnn-keras-and-tensorflow-backend-6eaab98d14dd
     cnn = tf.keras.Sequential()
@@ -293,7 +293,7 @@ def create_model_v2(img_size, num_classes):
     cnn.add(tf.keras.layers.Conv2D(50, (3, 3), activation="relu"))
     cnn.add(tf.keras.layers.Flatten())
     model = tf.keras.Sequential()
-    model.add(tf.keras.layers.TimeDistributed(cnn,  input_shape=(50, img_size, img_size, 1)))
+    model.add(tf.keras.layers.TimeDistributed(cnn,  input_shape=(frame_limit, img_size, img_size, 1)))
     model.add(tf.keras.layers.LSTM(8))
     model.add(tf.keras.layers.Dense(64))
 
@@ -315,9 +315,12 @@ def load_ntu_v2():
     NTU_DIR = os.environ["NTU_DIR"]
     def load_folder(img_path, frame_limit):
         # img_path is NTU_DIR/{test-train}/
+
+
         folders = os.listdir(img_path)
         list_of_folders = []
         classes = []
+        print("[INFO] Frames to load: {}".format(len(folders)*frame_limit))
         for folder in folders:
             imgs = []
             for fn in map2fullpath("{}/{}".format(img_path, folder), frame_limit):
@@ -336,7 +339,10 @@ def load_ntu_v2():
     number_of_videos = 3000 # 60*50
     frames = 50
 
+    print("[INFO] Loading train")
     x_train, y_train = load_folder("{}/{}".format(NTU_DIR, "train"), frames)
+
+    print("[INFO] Loading test")
     x_val, y_val = load_folder("{}/{}".format(NTU_DIR, "test"), frames)
 
     from tensorflow.keras.utils import to_categorical
@@ -348,9 +354,9 @@ def testv2():
 
     print("[INFO] Loading dataset.")
     x_train, y_train, x_val, y_val = load_ntu_v2()
+    print("X Train shape: {}".format(x_train.shape))
 
-    model = create_model_v2(256, 60)
-
+    model = create_model_v2(256, 60, 50)
     model.compile(
         optimizer=tf.optimizers.RMSprop(),
         loss=tf.losses.CategoricalCrossentropy(),
@@ -361,12 +367,12 @@ def testv2():
     model.fit(
         x_train,
         y_train,
+        epochs=2400,
         batch_size=4,
-        epochs=1200,
         validation_data=(x_val, y_val)
     )
     import datetime
-    model.save("run:{}".format(datetime.datetime.now()))
+    model.save(Path("runs/run:{}".format(datetime.datetime.now())))
 
 
 
