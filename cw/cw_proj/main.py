@@ -255,7 +255,7 @@ def create_model(input_shape, ltsm_layers, num_classes, conv_layers_num):
     lstm.add(tf.keras.layers.TimeDistributed(cnn))
     lstm.add(tf.keras.layers.LSTM(64))
     lstm.add(tf.keras.layers.Dense(64))
-    lstm.add(tf.keras.layers.Dense(num_classes, activation='sigmoid'))
+    lstm.add(tf.keras.layers.Dense(num_classes, activation='softmax'))
 
     return lstm
 
@@ -263,16 +263,84 @@ def create_model(input_shape, ltsm_layers, num_classes, conv_layers_num):
 
 def dataset2imgs(img_dict, num_samples, img_shape):
     imgs = []
-    class_ids = []
-    for classid in img_dict:
+    loaded_classes = []
+    class_ids = list(img_dict.keys())
+    random.shuffle(class_ids)
+    print("ClassIDS: {}".format(class_ids))
+    count = 0
+    for classid in class_ids:
+        print("Loaded classes: {} Class id".format(count, classid))
         for sample in range(num_samples):
-            img = cv.imread(img_dict[classid][sample], cv.IMREAD_COLOR)
+            img = cv.imread(img_dict[classid][sample], cv.IMREAD_GRAYSCALE)
             img = cv.resize(
                 img,
-                (img_shape, img_shape)).reshape(img_shape, img_shape, 3).astype("float32")
+                (img_shape, img_shape)
+            ).reshape(img_shape, img_shape, 3).astype("float32")
             imgs.append(img)
-            class_ids.append(classid)
-    return np.array(imgs), class_ids
+            loaded_classes.append(classid)
+        count += 1
+    return np.array(imgs), loaded_classes
+
+
+def create_model_v2(img_size, num_classes):
+    # Last night's parameters Conv2D(32.... ), MaxPooling2D(....pool_size=(2, 2))
+    # https://medium.com/nybles/create-your-first-image-recognition-classifier-using-cnn-keras-and-tensorflow-backend-6eaab98d14dd
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Conv2D(50, (3, 3), input_shape=(img_size, img_size, 3), activation="relu"))
+    model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+    model.add(tf.keras.layers.Conv2D(100, (3, 3), activation="relu"))
+    model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+    model.add(tf.keras.layers.Conv2D(50, (3, 3), activation="relu"))
+    model.add(tf.keras.layers.Flatten())
+    model.add(tf.keras.layers.Dense(128, activation="relu"))
+    model.add(tf.keras.layers.Dense(128, activation="relu"))
+    model.add(tf.keras.layers.Dense(128, activation="relu"))
+
+    model.add(tf.keras.layers.Dense(num_classes, activation="sigmoid"))
+
+    return model
+
+def testv2():
+
+    model = create_model_v2(256, 60)
+    train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
+        rescale=1./255,
+        shear_range=0.2,
+        zoom_range=0.2,
+        horizontal_flip=True
+    )
+    training_set = train_datagen.flow_from_directory(
+        "{}/{}".format(os.environ["NTU_DIR"], "S001C001P006R001AN"),
+        target_size=(256, 256),
+        batch_size=32,
+        class_mode="categorical"
+    )
+
+
+    test_set = train_datagen.flow_from_directory(
+        "{}/{}".format(os.environ["NTU_DIR"], "S001C001P003R001AN"),
+        target_size=(256, 256),
+        batch_size=32,
+        class_mode="categorical"
+    )
+
+    from IPython.display import display
+    from PIL import Image
+    model.compile(
+        optimizer=tf.optimizers.RMSprop(),
+        loss=tf.losses.CategoricalCrossentropy(),
+        metrics=["accuracy"]
+    )
+    model.fit_generator(
+        training_set,
+        steps_per_epoch=8000,
+        epochs=10,
+        validation_data=test_set,
+        validation_steps=800
+    )
+    import datetime
+    model.save("run:{}".format(datetime.datetime.now()))
+
 
 
 def rnn_train():
@@ -296,7 +364,7 @@ def rnn_train():
     # fit ✓ - working on it.
 
     # save
-    pass
+
 
 
 def cnn_train():
