@@ -294,13 +294,52 @@ def create_model_v2(img_size, num_classes, frame_limit):
     cnn.add(tf.keras.layers.Flatten())
     model = tf.keras.Sequential()
     model.add(tf.keras.layers.TimeDistributed(cnn,  input_shape=(frame_limit, img_size, img_size, 1)))
-    model.add(tf.keras.layers.LSTM(8))
+    model.add(tf.keras.layers.LSTM(32, activation="softsign"))
     model.add(tf.keras.layers.Dense(64))
 
 
     model.add(tf.keras.layers.Dense(num_classes, activation="sigmoid"))
 
     return model
+
+from tensorflow.keras.utils import to_categorical
+def load_folder(img_path, frame_limit, batch_size=0, generator=False):
+    # img_path is NTU_DIR/{test-train}/
+    folders = os.listdir(img_path)
+
+
+    folder_count = len(folders)
+    if batch_size == 0:
+        batch_size = folder_count
+
+    list_of_folders = []
+    classes = []
+    loaded = 0
+    print("[INFO] Frames to load: {}".format(batch_size*frame_limit))
+    random.shuffle(folders)
+    print("[INFO] Number of batches: {}".format(folder_count//batch_size))
+    while loaded < folder_count:
+        for folder in folders[loaded:batch_size]:
+            imgs = []
+            for fn in map2fullpath("{}/{}".format(img_path, folder), frame_limit):
+                img = cv.imread(fn, cv.IMREAD_GRAYSCALE)
+                img = cv.resize(img, (256, 256)).reshape((256, 256, 1)).astype("float32")
+                imgs.append(img)
+
+            list_of_folders.append(np.array(imgs))
+            classes.append(int(folder[-3:])-1)
+        classes_arr = to_categorical(np.array(classes), num_classes=60)
+        dataset_arr = np.array(list_of_folders)
+        if generator:
+            print("[INFO] RUNNING EXPERIMENTAL GENERATOR CODE DON'T FORGET!")
+            yield (dataset_arr, classes_arr)
+        else:
+            return dataset_arr, classes_arr
+
+        if (loaded + batch_size) > folder_count:
+            batch_size = folder_count % batch_size
+        else:
+            loaded += batch_size
 
 
 def load_ntu_v2():
@@ -313,26 +352,6 @@ def load_ntu_v2():
 
     # Load test
     NTU_DIR = os.environ["NTU_DIR"]
-    def load_folder(img_path, frame_limit):
-        # img_path is NTU_DIR/{test-train}/
-
-
-        folders = os.listdir(img_path)
-        list_of_folders = []
-        classes = []
-        print("[INFO] Frames to load: {}".format(len(folders)*frame_limit))
-        for folder in folders:
-            imgs = []
-            for fn in map2fullpath("{}/{}".format(img_path, folder), frame_limit):
-                img = cv.imread(fn, cv.IMREAD_GRAYSCALE)
-                img = cv.resize(img, (256, 256)).reshape((256, 256, 1)).astype("float32")
-                imgs.append(img)
-
-            list_of_folders.append(np.array(imgs))
-            classes.append(int(folder[-3:])-1)
-
-
-        return np.array(list_of_folders), np.array(classes)
 
     # Array shape: (number_of_videos, frames, width, height, channels)
     #               (3000, 50, 256, 256, 1)
@@ -345,8 +364,8 @@ def load_ntu_v2():
     print("[INFO] Loading test")
     x_val, y_val = load_folder("{}/{}".format(NTU_DIR, "test"), frames)
 
-    from tensorflow.keras.utils import to_categorical
-    return x_train, to_categorical(y_train), x_val, to_categorical(y_val)
+
+    return x_train, y_train, x_val, y_val
 
 
 def testv2():
@@ -368,7 +387,7 @@ def testv2():
         x_train,
         y_train,
         epochs=2400,
-        batch_size=4,
+        batch_size=2,
         validation_data=(x_val, y_val)
     )
     import datetime
