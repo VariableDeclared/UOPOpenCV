@@ -206,7 +206,7 @@ def convert_color(img, color_space="RGB"):
 
 # Define a function to extract features from a list of images
 # Have this function call bin_spatial() and color_hist()
-def extract_features(image, color_space='RGB', spatial_size=(32, 32),
+def extract_hog_features(image, color_space='RGB', spatial_size=(32, 32),
                         hist_bins=32, orient=9,
                         pix_per_cell=8, cell_per_block=2, hog_channel=0,
                         spatial_feat=True, hist_feat=True, hog_feat=True):
@@ -314,12 +314,13 @@ def load_folder(img_path, frame_limit, batch_size=0, generator=False):
 
     list_of_folders = []
     classes = []
-    loaded = 0
     print("[INFO] Frames to load: {}".format(batch_size*frame_limit))
     random.shuffle(folders)
-    print("[INFO] Number of batches: {}".format(folder_count//batch_size))
-    while loaded < folder_count:
-        for folder in folders[loaded:batch_size]:
+    number_of_batches = folder_count//batch_size
+    print("[INFO] Number of batches: {}".format(number_of_batches))
+    loaded = 0
+    while loaded < number_of_batches:
+        for folder in folders[loaded*batch_size:batch_size]:
             imgs = []
             for fn in map2fullpath("{}/{}".format(img_path, folder), frame_limit):
                 img = cv.imread(fn, cv.IMREAD_GRAYSCALE)
@@ -330,16 +331,18 @@ def load_folder(img_path, frame_limit, batch_size=0, generator=False):
             classes.append(int(folder[-3:])-1)
         classes_arr = to_categorical(np.array(classes), num_classes=60)
         dataset_arr = np.array(list_of_folders)
-        if generator:
-            print("[INFO] RUNNING EXPERIMENTAL GENERATOR CODE DON'T FORGET!")
-            yield (dataset_arr, classes_arr)
-        else:
-            return dataset_arr, classes_arr
 
-        if (loaded + batch_size) > folder_count:
+            # print("[INFO] RUNNING EXPERIMENTAL GENERATOR CODE DON'T FORGET!")
+        yield (dataset_arr, classes_arr)
+
+
+        if (loaded*batch_size) > folder_count:
             batch_size = folder_count % batch_size
+            loaded = 0
         else:
-            loaded += batch_size
+            batch_size += batch_size
+        # print("Loaded: {}, Condition: {}".format(loaded, loaded<number_of_batches))
+        loaded += 1
 
 
 def load_ntu_v2():
@@ -371,24 +374,33 @@ def load_ntu_v2():
 def testv2():
 
 
-    print("[INFO] Loading dataset.")
-    x_train, y_train, x_val, y_val = load_ntu_v2()
-    print("X Train shape: {}".format(x_train.shape))
-
     model = create_model_v2(256, 60, 50)
+
     model.compile(
         optimizer=tf.optimizers.RMSprop(),
         loss=tf.losses.CategoricalCrossentropy(),
         metrics=["accuracy"]
     )
     model.summary()
+
+
+    NTU_DIR = os.environ["NTU_DIR"]
+    train_img_dir = "{}/{}".format(NTU_DIR, "train")
+    folders = os.listdir(train_img_dir)
+    folder_count = len(folders)
     # return training_set
+    frames = 50
+    batch_size = 2
+    test_batch_size = 1
+    ds_generator = load_folder(train_img_dir, frames, batch_size,True)
+    test_generator = load_folder("{}/{}".format(NTU_DIR, "test"), frames, test_batch_size,True)
     model.fit(
-        x_train,
-        y_train,
-        epochs=2400,
-        batch_size=2,
-        validation_data=(x_val, y_val)
+        ds_generator,
+        steps_per_epoch=150,
+        max_queue_size=1,
+        epochs=2,
+        validation_data=test_generator,
+        validation_steps=test_batch_size
     )
     import datetime
     model.save(Path("runs/run:{}".format(datetime.datetime.now())))
