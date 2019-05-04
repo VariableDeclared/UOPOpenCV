@@ -320,25 +320,27 @@ def load_folder(img_path, frame_limit, batch_size=0, generator=False):
     print("[INFO] Number of batches: {}".format(number_of_batches))
     loaded = 0
     while loaded < number_of_batches:
-        for folder in folders[loaded*batch_size:batch_size]:
-            imgs = []
-            for fn in map2fullpath("{}/{}".format(img_path, folder), frame_limit):
-                img = cv.imread(fn)
-                img = cv.resize(img, (224, 224)).astype("float32")
-                imgs.append(img)
+        imgs = []
+        folder = random.choice(folders)
+        for fn in map2fullpath("{}/{}".format(img_path, folder), frame_limit):
+            img = cv.imread(fn)
+            img = cv.resize(img, (224, 224)).astype("float32")
+            imgs.append(img)
+        
+        list_of_folders.append(np.array(imgs))
+        class_id = int(folder[-3:])-1
+        # classes.append(class_id)
+        yield np.array(imgs),  to_categorical(np.array([class_id]), num_classes=60)
+        # classes_arr = to_categorical(np.array(classes), num_classes=60)
 
-            list_of_folders.append(np.array(imgs))
-            classes.append(int(folder[-3:])-1)
-        classes_arr = to_categorical(np.array(classes), num_classes=60)
-        dataset_arr = np.array(list_of_folders)
+        # dataset_arr = np.array(list_of_folders)
 
-            # print("[INFO] RUNNING EXPERIMENTAL GENERATOR CODE DON'T FORGET!")
-        yield (dataset_arr, classes_arr)
+            # # print("[INFO] RUNNING EXPERIMENTAL GENERATOR CODE DON'T FORGET!")
+        # yield (dataset_arr, classes_arr)
 
 
-        batch_size += batch_size
     # print("Loaded: {}, Condition: {}".format(loaded, loaded<number_of_batches))
-        loaded += batch_size
+        loaded += 1
 
 
 def load_ntu_v2():
@@ -370,8 +372,8 @@ def load_ntu_v2():
 def extract_features(directory, video_frames, batch_size):
     
     frames = video_frames
-    features = np.zeros(shape=(batch_size, 7, 7, 512))
-    labels = np.zeros(shape=(batch_size))
+    features = np.zeros(shape=(batch_size, video_frames, 1000))
+    labels = np.zeros(shape=(batch_size, 60))
     # Preprocess data
     folders = os.listdir(directory)
     folder_count = len(folders)
@@ -386,45 +388,67 @@ def extract_features(directory, video_frames, batch_size):
     vgg19 = VGG19()
     videos = []
     video_labels = []
+    # For each folder load 50 frame put in array.
     for inputs_batch, labels_batch in ds_generator:
-
         print("[INFO] Ran prediction... next batch. Input shape: {}".format(inputs_batch.shape))
         features_batch = vgg19.predict(inputs_batch.reshape(frames, 224, 224, 3))
-        # features[i * batch_size: (i+1) * batch_size] = features_batch
-        # labels[i * batch_size: (i+1) * batch_size] = labels_batch[i]
+        features[i] = features_batch
+        labels[i] = labels_batch
         i += 1
         # We're actually just loading the whole thing at the mo.
-        print("[DEBUG] {}".format(features_batch.shape))
+        print("[DEBUG] I: {}, batch_size: {}".format(i, batch_size))
         if i >= batch_size:
             break
-        videos.append(features_batch.reshape(50, 100, 10, 1))
-        video_labels.append(labels_batch)
-
-    return np.array(videos), np.array(video_labels)
-
+    return features, labels
 
 def testv3():
     train_dir = "{}/{}".format(os.environ["NTU_DIR"], "train")
     test_dir = "{}/{}".format(os.environ["NTU_DIR"], "test")
     # Extract 2 video batches at 50 frames a video.
-    train_batch_size = 4
-    val_batch_size = 2
     number_of_train_folders = len(os.listdir(train_dir))
-    print("[INFO] Video batches: {} Total folders: {}".format(train_batch_size // number_of_train_folders, number_of_train_folders))
-    train_features, train_labels = extract_features(train_dir, 50, train_batch_size)
-    val_features, validation_labels = extract_features(test_dir, 50, val_batch_size)
-    
-    classifier_model = create_model_v2(224, 60, 50)
+    number_of_val_folders = len(os.listdir(test_dir))
+    train_batch_size = number_of_train_folders
+    val_batch_size = number_of_val_folders
+    num_frames = 38
+    print("[INFO] Train folders: {} Val folders: {}".format(number_of_train_folders, number_of_val_folders))
+    train_features, train_labels = extract_features(train_dir, num_frames, train_batch_size)
+    val_features, val_labels = extract_features(test_dir, num_frames, val_batch_size)
+    print("[DEBUG]: trainshape {}".format(train_features.shape)) 
+    # classifier_model = create_model_v2(224, 60, num_frames)
 
-    classifier_model.compile(
-        optimizer=tf.optimizers.RMSprop(),
+    # classifier_model.compile(
+        # optimizer=tf.optimizers.RMSprop(),
+        # loss=tf.losses.CategoricalCrossentropy(),
+        # metrics=["accuracy"]
+    # )
+    # model = evaluate_model(train_features, train_labels, val_features, val_labels, num_frames)
+
+    return (train_features, train_labels), (val_features, val_labels)
+    
+
+def evaluate_model(train_features, train_labels, val_features, val_labels, num_frames):
+    from tensorflow.keras.layers import Dense, LSTM, Dropout
+    model = tf.keras.Sequential()
+    model.add(LSTM(100, input_shape=(num_frames, 1000)))
+    model.add(Dropout(0.5))
+    model.add(Dense(100, activation="relu"))
+    model.add(Dense(60, activation="softmax"))
+    model.compile(
         loss=tf.losses.CategoricalCrossentropy(),
-        metrics=["accuracy"]
+        optimizer=tf.optimizers.Adam(),
+        metrics=['accuracy']
     )
 
-    return classifier_model, (train_features, train_labels), (val_features, validation_labels)
-    
+    model.summary()
 
+    # sor action in range(0, 3):
+
+    model.fit(train_features, train_labels, batch_size=20)
+    accuracy = model.evaluate(val_features, val_labels, batch_size=20)
+
+    print("[INFO] Accuracy: {}".format(accuracy[1]))
+    return model, accuracy
+    
 def testv2():
 
 
