@@ -323,8 +323,8 @@ def load_folder(img_path, frame_limit, batch_size=0, generator=False):
         for folder in folders[loaded*batch_size:batch_size]:
             imgs = []
             for fn in map2fullpath("{}/{}".format(img_path, folder), frame_limit):
-                img = cv.imread(fn, cv.IMREAD_GRAYSCALE)
-                img = cv.resize(img, (256, 256)).reshape((256, 256, 1)).astype("float32")
+                img = cv.imread(fn)
+                img = cv.resize(img, (224, 224)).astype("float32")
                 imgs.append(img)
 
             list_of_folders.append(np.array(imgs))
@@ -336,13 +336,9 @@ def load_folder(img_path, frame_limit, batch_size=0, generator=False):
         yield (dataset_arr, classes_arr)
 
 
-        if (loaded*batch_size) > folder_count:
-            batch_size = folder_count % batch_size
-            loaded = 0
-        else:
-            batch_size += batch_size
-        # print("Loaded: {}, Condition: {}".format(loaded, loaded<number_of_batches))
-        loaded += 1
+        batch_size += batch_size
+    # print("Loaded: {}, Condition: {}".format(loaded, loaded<number_of_batches))
+        loaded += batch_size
 
 
 def load_ntu_v2():
@@ -370,6 +366,64 @@ def load_ntu_v2():
 
     return x_train, y_train, x_val, y_val
 
+
+def extract_features(directory, video_frames, batch_size):
+    
+    frames = video_frames
+    features = np.zeros(shape=(batch_size, 7, 7, 512))
+    labels = np.zeros(shape=(batch_size))
+    # Preprocess data
+    folders = os.listdir(directory)
+    folder_count = len(folders)
+    # https://towardsdatascience.com/transfer-learning-from-pre-trained-models-f2393f124751
+    # batch_size = 2
+    # test_batch_size = 1
+    ds_generator = load_folder(directory, frames, 1,True)
+    # test_generator = load_folder("{}/{}".format(NTU_DIR, "test"), frames, test_batch_size,True)
+
+    i = 0
+    from tensorflow.keras.applications import VGG19
+    vgg19 = VGG19()
+    videos = []
+    video_labels = []
+    for inputs_batch, labels_batch in ds_generator:
+
+        print("[INFO] Ran prediction... next batch. Input shape: {}".format(inputs_batch.shape))
+        features_batch = vgg19.predict(inputs_batch.reshape(frames, 224, 224, 3))
+        # features[i * batch_size: (i+1) * batch_size] = features_batch
+        # labels[i * batch_size: (i+1) * batch_size] = labels_batch[i]
+        i += 1
+        # We're actually just loading the whole thing at the mo.
+        print("[DEBUG] {}".format(features_batch.shape))
+        if i >= batch_size:
+            break
+        videos.append(features_batch.reshape(50, 100, 10, 1))
+        video_labels.append(labels_batch)
+
+    return np.array(videos), np.array(video_labels)
+
+
+def testv3():
+    train_dir = "{}/{}".format(os.environ["NTU_DIR"], "train")
+    test_dir = "{}/{}".format(os.environ["NTU_DIR"], "test")
+    # Extract 2 video batches at 50 frames a video.
+    train_batch_size = 4
+    val_batch_size = 2
+    number_of_train_folders = len(os.listdir(train_dir))
+    print("[INFO] Video batches: {} Total folders: {}".format(train_batch_size // number_of_train_folders, number_of_train_folders))
+    train_features, train_labels = extract_features(train_dir, 50, train_batch_size)
+    val_features, validation_labels = extract_features(test_dir, 50, val_batch_size)
+    
+    classifier_model = create_model_v2(224, 60, 50)
+
+    classifier_model.compile(
+        optimizer=tf.optimizers.RMSprop(),
+        loss=tf.losses.CategoricalCrossentropy(),
+        metrics=["accuracy"]
+    )
+
+    return classifier_model, (train_features, train_labels), (val_features, validation_labels)
+    
 
 def testv2():
 
