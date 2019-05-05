@@ -426,24 +426,32 @@ def testv3():
     return (train_features, train_labels), (val_features, val_labels)
     
 
-def evaluate_model(train_features, train_labels, val_features, val_labels, num_frames):
+def evaluate_model(
+        model,
+        train_features,
+        train_labels,
+        val_features,
+        val_labels,
+        num_frames,
+        epochs
+    ):
     from tensorflow.keras.layers import Dense, LSTM, Dropout
-    model = tf.keras.Sequential()
-    model.add(LSTM(100, input_shape=(num_frames, 1000)))
-    model.add(Dropout(0.5))
-    model.add(Dense(100, activation="relu"))
-    model.add(Dense(60, activation="softmax"))
-    model.compile(
-        loss=tf.losses.CategoricalCrossentropy(),
-        optimizer=tf.optimizers.Adam(),
-        metrics=['accuracy']
-    )
+    # model = tf.keras.Sequential()
+    # model.add(LSTM(100, input_shape=(num_frames, 1000)))
+    # model.add(Dropout(0.5))
+    # model.add(Dense(100, activation="relu"))
+    # model.add(Dense(60, activation="softmax"))
+    # model.compile(
+        # loss=tf.losses.CategoricalCrossentropy(),
+        # optimizer=tf.optimizers.Adam(),
+        # metrics=['accuracy']
+    # )
 
     model.summary()
 
     # sor action in range(0, 3):
 
-    model.fit(train_features, train_labels, batch_size=20)
+    model.fit(train_features, train_labels, batch_size=20, epochs=epochs)
     accuracy = model.evaluate(val_features, val_labels, batch_size=20)
 
     print("[INFO] Accuracy: {}".format(accuracy[1]))
