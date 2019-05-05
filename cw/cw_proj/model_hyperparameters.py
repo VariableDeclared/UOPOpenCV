@@ -71,7 +71,7 @@ def perform_modelv2_run(train=None, validation=None):
         "train_folder_len": train_tuple[0].shape[0],
         "val_folder_len": val_tuple[0].shape[0]
     })
-    save_results(results)
+    save_results(dir_prefix, results)
     return train_tuple, val_tuple
 
 
@@ -84,15 +84,20 @@ def print_results(results):
     for run in result:
         print("{}".format(run[1]*100))
 
-def save_results(prefix="run", results):
+def save_results(prefix="run", results={}):
     import json
-    if not os.path.isdir(prefix):
-        os.mkdir(prefix)
+    from pathlib import Path
+    path = Path("./{}".format(prefix))
+ 
+    if not os.path.isdir(path):
+        os.mkdir(path)
 
     # https://stackoverflow.com/questions/7999935/python-datetime-to-string-without-microsecond-component
-    file_name = "{}/run:{}.json".format(
-        prefix
-        datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    file_name = Path(
+            "./{}/run:{}.json".format(
+            prefix,
+            datetime.datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        )
     )
     json.dump(results, open(file_name, "w"))
     print_results_dict(results)

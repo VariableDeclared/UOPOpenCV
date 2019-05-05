@@ -436,16 +436,6 @@ def evaluate_model(
         epochs
     ):
     from tensorflow.keras.layers import Dense, LSTM, Dropout
-    # model = tf.keras.Sequential()
-    # model.add(LSTM(100, input_shape=(num_frames, 1000)))
-    # model.add(Dropout(0.5))
-    # model.add(Dense(100, activation="relu"))
-    # model.add(Dense(60, activation="softmax"))
-    # model.compile(
-        # loss=tf.losses.CategoricalCrossentropy(),
-        # optimizer=tf.optimizers.Adam(),
-        # metrics=['accuracy']
-    # )
 
     model.summary()
 
