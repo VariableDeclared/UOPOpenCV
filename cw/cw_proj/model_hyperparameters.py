@@ -57,21 +57,21 @@ def eval_svm(train, val, *args, **kwargs):
     if train is None or val is None:
         train, val = main.testv3()
     kernel = kwargs["svm_kernel"] if kwargs.get("svm_kernel") else cv.ml.SVM_LINEAR
-    c = kwargs["C"] if kwargs.get("C") else 0
+    nu = kwargs["nu"] if kwargs.get("nu") else 0.2
     svm = cv.ml.SVM_create()
-    svm.setType(cv.ml.SVM_NU_SVC)
+    svm.setNu(nu)
+    svm.setType(cv.ml.SVM_ONE_CLASS)
     svm.setKernel(kernel)
-    svm.setC(c)
     svm.setTermCriteria((cv.TERM_CRITERIA_MAX_ITER, 100, 1e-6))
     # print("[INFO] Keys: %s" % label_to_img.())
     svm.train(train[0].astype("float32"), cv.ml.ROW_SAMPLE, train[1].astype("int32"))
 
     # svm.save("trained_/svm")
 
-    predicted = svm.predict(val[0])
-
+    predicted = svm.predict(val[0].astype("float32"))
+    print("[DEBUG] {}.{}".format(predicted[1].shape, val[1].shape))
     # https://stackoverflow.com/questions/19629331/python-how-to-find-accuracy-result-in-svm-text-classifier-algorithm-for-multil
-    return accuracy_score(val[1], predicted)
+    return accuracy_score(val[1], predicted[1])
 
 
 def perform_modelv2_run(train=None, validation=None, info=None):
@@ -232,10 +232,12 @@ def they_hate_when_then_come_tru(train=None, val=None):
                     "C": c,
                     "kernel": kernel
                 })
-                while i < train[0].shape[0]:
+                while i < X_train[0].shape[0]:
                     run_svm(
-                        (X_train[i], np.full((X_train[i].shape[0], 60), y_train[i])),
-                        (X_test[1], np.full((X_test[1].shape[0], 60), y_test[i])),
+                        # (X_train, y_train),
+                        # (X_test, y_test),
+                        (X_train[i], np.full((X_train[i].shape[0], 1), np.argmax(y_train[i]))),
+                        (X_test[i%X_test.shape[0]], np.full((X_test[1].shape[0], 1), np.argmax(y_test[i%y_test.shape[0]]))),
                         info,
                         C=c,
                         kernel_type=kernel

@@ -529,3 +529,23 @@ def read_labels(label_fh):
 def get_files():
     pass
 
+def svm_train():
+    num_samples = 100
+    images, targets = load_CAD60_dataset(num_samples)
+
+
+    svm = cv.ml.SVM_create()
+    svm.setType(cv.ml.SVM_C_SVC)
+    svm.setKernel(cv.ml.SVM_LINEAR)
+    svm.setTermCriteria((cv.TERM_CRITERIA_MAX_ITER, 100, 1e-6))
+    # print("[INFO] Keys: %s" % label_to_img.())
+    svm.train(np.array(images), cv.ml.ROW_SAMPLE, np.array(targets))
+
+    svm.save("trained_/svm")
+
+
+
+
+
+if __name__ == "__main__":
+    train()
