@@ -9,7 +9,7 @@ import skimage
 import tensorflow as tf
 from pathlib import Path
 
-CAD60_DIR = "" #os.environ["CAD_DIR"]
+CAD60_DIR = os.environ["CAD_DIR"]
 NTU_DIR = os.environ["NTU_DIR"]
 
 
@@ -83,6 +83,7 @@ def load_CAD60_dataset(num_samples=1):
     index = 0
     for sample in range(1, num_samples):
         for label in labels:
+            print("[DEBUG] Loading label: {}".format(label))
             img = cv.imread("%s/%s/Depth_%s.png" % (CAD60_DIR, label, sample))
             data = np.array(img, dtype=np.float32)
             # print("[INFO] Img Shape: {}".format(data.shape))
@@ -326,7 +327,7 @@ def load_folder(img_path, frame_limit, batch_size=0, generator=False):
             img = cv.imread(fn)
             img = cv.resize(img, (224, 224)).astype("float32")
             imgs.append(img)
-        
+
         list_of_folders.append(np.array(imgs))
         class_id = int(folder[-3:])-1
         # classes.append(class_id)
@@ -370,7 +371,7 @@ def load_ntu_v2():
 
 
 def extract_features(directory, video_frames, batch_size):
-    
+
     frames = video_frames
     features = np.zeros(shape=(batch_size, video_frames, 1000))
     labels = np.zeros(shape=(batch_size, 60))
@@ -413,7 +414,7 @@ def testv3():
     print("[INFO] Train folders: {} Val folders: {}".format(number_of_train_folders, number_of_val_folders))
     train_features, train_labels = extract_features(train_dir, num_frames, train_batch_size)
     val_features, val_labels = extract_features(test_dir, num_frames, val_batch_size)
-    print("[DEBUG]: trainshape {}".format(train_features.shape)) 
+    print("[DEBUG]: trainshape {}".format(train_features.shape))
     # classifier_model = create_model_v2(224, 60, num_frames)
 
     # classifier_model.compile(
@@ -424,7 +425,7 @@ def testv3():
     # model = evaluate_model(train_features, train_labels, val_features, val_labels, num_frames)
 
     return (train_features, train_labels), (val_features, val_labels)
-    
+
 
 def evaluate_model(
         model,
@@ -445,8 +446,8 @@ def evaluate_model(
     accuracy = model.evaluate(val_features, val_labels, batch_size=20)
 
     print("[INFO] Accuracy: {}".format(accuracy[1]))
-    return model, accuracy
-    
+    return accuracy
+
 def testv2():
 
 
@@ -528,24 +529,3 @@ def read_labels(label_fh):
 def get_files():
     pass
 
-def train():
-    num_samples = 100
-    images, targets = load_CAD60_dataset(num_samples)
-
-
-    svm = cv.ml.SVM_create()
-    svm.setType(cv.ml.SVM_C_SVC)
-    svm.setKernel(cv.ml.SVM_LINEAR)
-    svm.setTermCriteria((cv.TERM_CRITERIA_MAX_ITER, 100, 1e-6))
-    # print("[INFO] Keys: %s" % label_to_img.())
-    svm.train(np.array(images), cv.ml.ROW_SAMPLE, np.array(targets))
-
-    svm.save("trained_/svm")
-
-    # svm.train(trainingData, cv.ml.ROW_SAMPLE, labels)
-    pass
-
-
-
-if __name__ == "__main__":
-    train()
