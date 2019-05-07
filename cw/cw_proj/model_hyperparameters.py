@@ -139,13 +139,13 @@ def perform_modelv2_run(train=None, validation=None, info=None):
                 runs[run] = float(accuracy[1])
             results[unit_size][model_index]["runs"] = runs
             model_count += 1
+        models[model]["fn"] = models[model]["fn"].__name__
         results.update({
             "epochs": epochs,
             "train_folder_len": train_tuple[0].shape[0],
             "val_folder_len": val_tuple[0].shape[0],
             "info": info,
-            "model": model,
-            "model_params": models
+            "model": model
         })
         save_results(dir_prefix, results)
     return train_tuple, val_tuple
@@ -206,10 +206,10 @@ def run_svm(train, val, info, **kwargs):
     save_results("SVM", svm_results)
 
 
-def they_hate_when_then_come_tru(train=None, val=None):
+def run_suite(train=None, val=None):
     K_FOLD = int(os.environ.get("K_FOLD")) if os.environ.get("K_FOLD") else 10
     if train is None or val is None:
-        train_tuple, val_tuple = main.testv3()
+        train_tuple, val_tuple = load_data()
         train, val = train_tuple, val_tuple
     from sklearn.model_selection import KFold
     kf = KFold(n_splits=K_FOLD)
