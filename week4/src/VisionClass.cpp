@@ -1,10 +1,11 @@
+#include "../include/VisionClass.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
 using namespace cv;
 
 
-namespace ComputerVision 
+namespace ComputerVision
 {
 
 
@@ -13,13 +14,13 @@ namespace ComputerVision
                 ~SquareImage() {
                     // Just to make sure.
                     this->controlLoop = false;
-                    
+
                     delete this->img, this->font;
                 }
 
                 SquareImage(String imageDirectory, String displayString, MouseCallback callback) {
-                    
-                    
+
+
                     this->img = cvLoadImage(imageDirectory.c_str());
                     this->text = displayString;
                     this->mCallback = callback;
@@ -27,17 +28,17 @@ namespace ComputerVision
                     this->angle = 180;
                     this->iPercentage = 100;
                     this->iBright = 250;
-                    
+
 
                 }
 
                 void setupWindow(int windowFlag) {
-                    
+
 
                     namedWindow(this->text, windowFlag);
-                    
+
                     namedWindow("Affine", windowFlag);
-                    
+
                     cvShowImage(this->text.c_str(), this->img);
                     setMouseCallback(this->text, this->mCallback, NULL);
                     createTrackbar("Angle", "Affine", &this->percentage, 200);
@@ -46,8 +47,8 @@ namespace ComputerVision
                     createTrackbar("YTranslation", "Affine", &this->iImageHeight, this->img->height);
                     createTrackbar("Bright", "Affine", &this->iBright, 510);
                     createTrackbar("Percentage", "Affine", &this->iPercentage, 200);
-    
-                    
+
+
 
                 }
 
@@ -89,40 +90,40 @@ namespace ComputerVision
                         contrast = (float) this->iPercentage / 100;
                         imgWarped.convertTo(imgWarped, -1, 1, brightness);
                         imgWarped.convertTo(imgWarped, -1, contrast, 0);
-                        
+
                         imshow(this->text, imgWarped);
 
                         key = waitKey(30);
-                        if ( key == 27 ) 
+                        if ( key == 27 )
                         {
                             break;
                         }
-                    
+
                     }
                 }
 
                 void rotateImage(int deg) {
-                    
+
                 }
 
                 // void showImage(Point pointOne, Point pointTwo) {
-                    
+
                 //     cvRectangle(img, pointOne, pointTwo,Scalar(0,0,255)); //draw rectangle
 
                 //     cvPutText(img, text.c_str(), Point(pointOne.x+2,pointTwo.y-10), &font, cvScalar(255, 0, 0)); // overlay text
                 //     cvShowImage("image", img);
                 //     waitKey(0);
                 // }
-                
+
                 void shouldDie() {
                     this->controlLoop = false;
-                } 
-            
+                }
+
             private:
                 int iImageHeight, iImageWidth, percentage, iBright, iPercentage, angle;
                 double scale;
                 Mat rotationMatrix, translationMatrix, modificationMat;
-                String text;	
+                String text;
                 IplImage *img, *imgWarped;
                 CvFont font = cvFont(3);
                 MouseCallback mCallback;

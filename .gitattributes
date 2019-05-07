@@ -1,0 +1,23 @@
+SamplePictures/SampleVideo.mp4 filter=lfs diff=lfs merge=lfs -text
+SamplePictures/sample.wmv filter=lfs diff=lfs merge=lfs -text
+SamplePictures/building.jpg filter=lfs diff=lfs merge=lfs -text
+SamplePictures/jellyfish-25-mbps-hd-hevc.3gp filter=lfs diff=lfs merge=lfs -text
+SamplePictures/sample.JPG filter=lfs diff=lfs merge=lfs -text
+faces/6.jpg filter=lfs diff=lfs merge=lfs -text
+faces/facesPeter3.jpg filter=lfs diff=lfs merge=lfs -text
+faces/Pete22.jpg filter=lfs diff=lfs merge=lfs -text
+faces/Pete23.jpg filter=lfs diff=lfs merge=lfs -text
+faces/Pete24.jpg filter=lfs diff=lfs merge=lfs -text
+faces/Peter6.jpg filter=lfs diff=lfs merge=lfs -text
+faces/face1.png filter=lfs diff=lfs merge=lfs -text
+faces/face2.JPG filter=lfs diff=lfs merge=lfs -text
+faces/face3.JPG filter=lfs diff=lfs merge=lfs -text
+faces/facesPeter1.jpg filter=lfs diff=lfs merge=lfs -text
+faces/facesPeter2.jpg filter=lfs diff=lfs merge=lfs -text
+faces/facesPeter6.jpg filter=lfs diff=lfs merge=lfs -text
+faces/Pete21.jpg filter=lfs diff=lfs merge=lfs -text
+# cw/OpenPoseTutorial/face/pose_iter_116000.caffemodel filter=lfs diff=lfs merge=lfs -text
+# cw/OpenPoseTutorial/hand/pose_iter_102000.caffemodel filter=lfs diff=lfs merge=lfs -text
+# cw/OpenPoseTutorial/pose/coco/pose_iter_440000.caffemodel filter=lfs diff=lfs merge=lfs -text
+# cw/OpenPoseTutorial/pose/mpi/pose_iter_160000.caffemodel filter=lfs diff=lfs merge=lfs -text
+
